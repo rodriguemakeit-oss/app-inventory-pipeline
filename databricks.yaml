@@ -1,0 +1,154 @@
+bundle:
+  name: leanix-data-pipeline
+  uuid: 00000000-0000-0000-0000-000000000000
+
+include:
+  - resources/*.yml
+  - resources/*.yaml
+
+variables:
+  catalog:
+    description: Databricks catalog for LeanIX data
+    default: leanix_dev
+
+  schema:
+    description: Databricks schema for LeanIX data
+    default: default
+
+  cdh_bucket:
+    description: S3 CDH bucket for export
+    default: s3://demo-data-bucket/
+
+  leanix_subdomain:
+    description: LeanIX subdomain
+    default: portfolio
+
+  leanix_api_token_scope:
+    description: Databricks secret scope for LeanIX API token
+    default: leanix-secrets
+
+  leanix_api_token_key:
+    description: Databricks secret key for LeanIX API token
+    default: api_token
+
+  job_schedule_cron:
+    description: Job schedule in cron format
+    default: "0 0 2 * * ?"  # Daily at 2 AM UTC (Quartz cron: seconds minutes hours day month dow)
+
+  timezone_id:
+    description: Timezone for scheduling
+    default: Europe/Paris
+
+  pause_status:
+    description: Schedule pause status
+    default: PAUSED
+
+  output_volume_path:
+    description: Databricks volume path for JSON output
+    default: /Volumes/leanix_dev/default/leanix_exports
+
+  alert_quartz_cron_expression:
+    description: >-
+      Même cadence que job_schedule_cron, décalée d'environ 30 min pour
+      laisser le job terminer. À garder synchronisé manuellement.
+    default: "0 30 2 * * ?"
+
+  teams_alert_destination_id:
+    description: Notification destination Email vers le canal Teams
+    lookup:
+      notification_destination: teams-leanix-alerts
+
+  alert_warehouse_id:
+    description: SQL warehouse utilisé pour exécuter l'alerte
+    lookup:
+      warehouse: leanix_warehouse
+
+  alert_pause_status:
+    description: Statut de l'alerte de suivi d'échec du job
+    default: PAUSED
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+    workspace:
+      host: https://workspace.example.invalid
+      root_path: /Workspace/Shared/leanix-data-pipeline/qh6708
+
+    variables:
+      catalog: leanix_dev
+      schema: default
+      cdh_bucket: s3://demo-data-bucket/
+      leanix_subdomain: portfolio
+      leanix_api_token_scope: leanix-secrets-dev
+      leanix_api_token_key: api_token
+      job_schedule_cron: "0 0 2 * * ?"
+      timezone_id: Europe/Paris
+      pause_status: UNPAUSED
+      output_volume_path: /Volumes/leanix_dev/default/leanix_exports
+      alert_quartz_cron_expression: "0 30 2 * * ?"
+      alert_pause_status: UNPAUSED
+
+  preprod:
+    mode: production
+
+    workspace:
+      host: https://workspace.example.invalid
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+
+    run_as:
+      service_principal_name: contributor@example.com
+
+    variables:
+      catalog: leanix_preprod
+      schema: default
+      cdh_bucket: s3://demo-data-bucket/
+      leanix_subdomain: portfolio
+      leanix_api_token_scope: leanix-secrets-preprod
+      leanix_api_token_key: api_token
+      job_schedule_cron: "0 0 3 * * ?"
+      timezone_id: Europe/Paris
+      pause_status: UNPAUSED
+      output_volume_path: /Volumes/leanix_preprod/default/leanix_exports
+
+    permissions:
+      - service_principal_name: contributor@example.com
+        level: CAN_MANAGE
+      - group_name: leanix-admins-preprod
+        level: CAN_VIEW
+
+  prod:
+    mode: production
+
+    workspace:
+      host: https://workspace.example.invalid
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+
+    run_as:
+      service_principal_name: contributor@example.com
+
+    variables:
+      catalog: leanix_prod
+      schema: default
+      cdh_bucket: s3://demo-data-bucket/
+      leanix_subdomain: portfolio
+      leanix_api_token_scope: leanix-secrets-prod
+      leanix_api_token_key: api_token
+      job_schedule_cron: "0 0 3 * * ?"
+      timezone_id: Europe/Paris
+      pause_status: UNPAUSED
+      output_volume_path: /Volumes/leanix_prod/default/leanix_exports
+      alert_quartz_cron_expression: "0 30 3 * * ?"
+      alert_pause_status: PAUSED  # rien ne tourne encore en prod, à repasser en UNPAUSED à l'activation
+      alert_warehouse_id:  # pas de leanix_warehouse en prod, réutilise le warehouse générique existant
+        lookup:
+          warehouse: "Serverless Starter Warehouse"
+
+    permissions:
+      - service_principal_name: contributor@example.com
+        level: CAN_MANAGE
+      - group_name: leanix-admins-prod
+        level: CAN_VIEW
+      - user_name: contributor@example.com
+        level: CAN_RUN

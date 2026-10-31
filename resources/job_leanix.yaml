@@ -1,0 +1,60 @@
+resources:
+  jobs:
+    leanix_data_pipeline:
+      name: leanix-data-pipeline-${bundle.target}
+
+      description: |
+        LeanIX Data Pipeline
+        - Fetches application data from LeanIX GraphQL API
+        - Transforms into dimensional model (facts + dimensions)
+        - Exports to Databricks tables and S3 CDH bucket
+        Environment: ${bundle.target}
+
+      schedule:
+        quartz_cron_expression: ${var.job_schedule_cron}
+        timezone_id: ${var.timezone_id}
+        pause_status: ${var.pause_status}
+
+      tasks:
+        - task_key: leanix_extract_transform
+
+          notebook_task:
+            notebook_path: ../src/notebooks/Data_LeanIX.ipynb
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              cdh_bucket: ${var.cdh_bucket}
+              leanix_subdomain: ${var.leanix_subdomain}
+              leanix_api_token_scope: ${var.leanix_api_token_scope}
+              leanix_api_token_key: ${var.leanix_api_token_key}
+              output_volume_path: ${var.output_volume_path}
+              environment: ${bundle.target}
+
+          timeout_seconds: 3600
+
+          max_retries: 2
+          min_retry_interval_millis: 60000
+
+      # TODO: réintroduire une tâche data_quality_checks (notebook
+      # ../src/notebooks/LeanIX_DataQuality_Checks) une fois ce notebook écrit.
+      # Retirée le 2026-08-11 : bloquait le déploiement, notebook inexistant.
+
+      queue:
+        enabled: true
+
+      performance_target: PERFORMANCE_OPTIMIZED
+
+      tags:
+        environment: ${bundle.target}
+        project: leanix
+        data-pipeline: true
+
+      notification_settings:
+        no_alert_for_skipped_runs: false
+        no_alert_for_canceled_runs: false
+
+      email_notifications:
+        on_failure:
+          - contributor@example.com
+        on_success:
+          - contributor@example.com

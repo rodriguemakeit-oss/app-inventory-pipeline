@@ -1,0 +1,47 @@
+resources:
+  alerts:
+    leanix_failure_alert:
+      display_name: "leanix-data-pipeline-${bundle.target} - Job Failure Alert"
+      parent_path: ${workspace.root_path}
+      warehouse_id: ${var.alert_warehouse_id}
+
+      query_text: >-
+        WITH failed AS (
+          SELECT run_id, period_start_time, period_end_time, result_state, termination_code
+          FROM system.lakeflow.job_run_timeline
+          WHERE job_id = ${resources.jobs.leanix_data_pipeline.id}
+            AND result_state IN ('FAILED', 'ERROR', 'TIMED_OUT', 'CANCELED')
+            AND period_end_time >= current_timestamp() - INTERVAL 3 HOURS
+        )
+        SELECT run_id, period_start_time, period_end_time, result_state,
+               termination_code, COUNT(*) OVER () AS n_failed_runs
+        FROM failed ORDER BY period_end_time DESC
+
+      schedule:
+        quartz_cron_schedule: ${var.alert_quartz_cron_expression}
+        timezone_id: ${var.timezone_id}
+        pause_status: ${var.alert_pause_status}
+
+      custom_summary: >-
+        🔴 [${bundle.target}] leanix-data-pipeline a échoué — {{QUERY_RESULT_VALUE}} run(s) en échec
+
+      custom_description: >-
+        <p>Le job Databricks <strong>leanix-data-pipeline-${bundle.target}</strong> a échoué.
+        {{QUERY_RESULT_VALUE}} run(s) en échec détecté(s) :</p>
+        {{QUERY_RESULT_TABLE}}
+        <p><a href="{{ALERT_URL}}">Voir l'alerte</a> &nbsp;|&nbsp;
+        <a href="{{QUERY_URL}}">Voir la requête</a></p>
+
+      evaluation:
+        comparison_operator: GREATER_THAN
+        source:
+          name: n_failed_runs
+        threshold:
+          value:
+            double_value: 0
+        empty_result_state: OK
+        notification:
+          notify_on_ok: false
+          retrigger_seconds: 0
+          subscriptions:
+            - destination_id: ${var.teams_alert_destination_id}
