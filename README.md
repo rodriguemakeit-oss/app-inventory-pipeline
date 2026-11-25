@@ -1,27 +1,24 @@
 # App Inventory Pipeline
 
-Pipeline Databricks pour transformer un inventaire LeanIX en modèle dimensionnel.
+A Databricks Asset Bundle example for ingesting an application inventory, transforming it into dimensional tables, and exporting curated data.
 
-Version de portfolio maintenue sur [rodriguemakeit-oss](https://github.com/rodriguemakeit-oss).
+## What it demonstrates
 
-## Ce que le projet explore
+- Configuration-driven Databricks jobs and environments
+- A notebook-based ingestion and transformation flow
+- Dimensional modelling and data export patterns
+- Optional scheduling and failure-alert configuration
 
-Pipeline Databricks pour transformer un inventaire LeanIX en modèle dimensionnel. L’accent est mis sur la séparation des composants, la configuration explicite et la réutilisation des traitements.
+## Repository map
 
-## Structure
+- `src/notebooks/` — transformation notebook
+- `resources/` — job definitions
+- `databricks.yaml` — bundle targets and example settings
 
-`src/notebooks/ · resources/ · databricks.yaml`
+## Run locally
 
-## Prise en main
+See [GUIDE.md](GUIDE.md). Running the pipeline requires a Databricks workspace, an inventory source, and storage configured by you. Sample configuration uses placeholders and includes no real inventory.
 
-Consultez [GUIDE.md](GUIDE.md) pour les commandes et la configuration détaillées.
+## Scope
 
-Les valeurs de déploiement sont des exemples. Les identifiants nuls et les domaines `example.invalid` doivent être remplacés dans votre propre environnement. Aucun déploiement cloud n’est lancé automatiquement.
-
-## État du projet
-
-Cette adaptation nécessite vos propres services et jeux de données. Les contrôles locaux sont décrits dans [VALIDATION.md](VALIDATION.md) ; ils ne constituent pas une validation des intégrations cloud.
-
-## Contributions et licences
-
-Les noms de packages, crédits d’auteurs et avis tiers conservés dans les sources s’appliquent à leurs composants respectifs. Aucune licence globale supplémentaire n’est attribuée à ce dépôt.
+This is a portfolio adaptation, not a ready-to-deploy client integration. Review the example settings and validate permissions, schedules, and destinations before use. See [VALIDATION.md](VALIDATION.md).
